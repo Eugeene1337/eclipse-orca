@@ -1,0 +1,27 @@
+{
+  "name": "eclipse-orca",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --no-warnings --max-old-space-size=8192 --experimental-specifier-resolution=node --loader ts-node/esm --import ./logError.js ./start.ts",
+    "lint": "eslint . --ext .ts"
+  },
+  "type": "module",
+  "author": "jeka",
+  "dependencies": {
+    "@orca-so/whirlpools": "^1.0.2",
+    "@solana-program/compute-budget": "^0.6.1",
+    "@solana-program/system": "^0.6.2",
+    "@solana/web3.js": "^2.0.0",
+    "bs58": "^6.0.0",
+    "dotenv": "^16.4.7",
+    "inquirer": "^9.3.7",
+    "ts-node": "^10.9.2",
+    "tslog": "^4.9.3",
+    "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^22.10.5"
+  }
+}

@@ -8,6 +8,14 @@ export function randomFloat(min: number, max: number): number {
     return Math.random() * (max - min) + min;
 }
 
+export function multiplyBigInt(value: bigint, multiplier: number): bigint {
+    const scale = 100;
+
+    const scaledMultiplier = BigInt(Math.round(multiplier * scale));
+
+    return (value * scaledMultiplier) / BigInt(scale);
+}
+
 export const sleep = async (millis: number) => new Promise(resolve => setTimeout(resolve, millis))
 
 export function shuffle(array: Array<string>) {

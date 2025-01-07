@@ -1,45 +1,54 @@
-import { readWallets } from "./utils/wallet"
+import { readWallets, getTokenBalance } from "./utils/wallet"
 import { entryPoint } from "./utils/menu"
 import { makeLogger } from "./utils/logger"
 import { getRandomPool } from "./utils/liquidityPool"
+import { random, randomFloat, multiplyBigInt, sleep } from "./utils/common"
 import { createKeyPairSignerFromBytes, getBase58Encoder, address, createSolanaRpc } from '@solana/web3.js';
 import { setWhirlpoolsConfig } from '@orca-so/whirlpools';
-import { CONFIG, TOKENS } from './config'
+import { CONFIG } from './config'
+import { executeSwap } from './modules/orca'
+
 
 let privateKeys = readWallets('./private_keys.txt')
 const rpc = createSolanaRpc(CONFIG.rpc);
 await setWhirlpoolsConfig('eclipseMainnet');
 
 async function processMultipleSwaps() {
-    const logger = makeLogger("Multiple swaps")
+    
 
     for (let privateKey of privateKeys) {
         const wallet = await createKeyPairSignerFromBytes(
             getBase58Encoder().encode(privateKey)
         );
-        const randomLiquidityPool = getRandomPool();
-        const token = address("GU7NS9xCwgNPiAdJ69iusFrRfawjDDPjeMBovhV1d4kn");
-        const result = await rpc
-            .getTokenAccountsByOwner(
-                wallet.address,
-                { programId: token },
-                { encoding: "base64" }
-            )
-            .send();
 
-        console.log(`Balance: ${Number(result) / 1000000000 } tETH`);
+        const logger = makeLogger(`[${wallet.address}]:`)
 
-        const inputAmount = 100_000n;
+        const iterations = random(CONFIG.minTxCount, CONFIG.maxTxCount) / 2;
+        for (let i = 1; i <= iterations; i++) {
+            logger.info(`Iteration: ${i}`);
 
-
-        //for count / 2
-            // swap ETH to tETH
-            // swap tETH to ETH
-    }
-
-    // const { value: balance } = await rpc.getBalance(wallet.address).send();
+            const pool = getRandomPool();
+            const tokenBalance = await getTokenBalance(wallet, pool.tokenA.name, rpc, logger);
+            const multiplier = randomFloat(0.7, 0.9);
+            const inputAmount = multiplyBigInt(tokenBalance, multiplier);
+            
+            logger.info(`Executing swap ${pool.tokenA.name} to ${pool.tokenB.name}.`)
+            await executeSwap(wallet, address(pool.poolAddress), address(pool.tokenA.address), inputAmount, rpc, logger);
     
-    // console.log(`Balance: ${Number(balance) / 1 000 000 000} ETH`);
+            let sleepTime = random(CONFIG.sleepFrom, CONFIG.sleepTo);
+            logger.info(`💤 Sleep ${sleepTime} seconds.`)
+            await sleep(sleepTime * 1000);
+
+            const token2Balance = await getTokenBalance(wallet, pool.tokenB.name, rpc, logger);
+
+            logger.info(`Executing swap ${pool.tokenB.name} to ${pool.tokenA.name}.`)
+            await executeSwap(wallet, address(pool.poolAddress), address(pool.tokenB.address), token2Balance, rpc, logger);
+            
+            sleepTime = random(CONFIG.sleepFrom, CONFIG.sleepTo);
+            logger.info(`💤 Sleep ${sleepTime} seconds.`);
+            await sleep(sleepTime * 1000);
+        }
+    }
 }
 
 async function warmUpSwap() {

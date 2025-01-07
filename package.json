@@ -12,6 +12,7 @@
     "@orca-so/whirlpools": "^1.0.2",
     "@solana-program/compute-budget": "^0.6.1",
     "@solana-program/system": "^0.6.2",
+    "@solana-program/token-2022": "^0.3.1",
     "@solana/web3.js": "^2.0.0",
     "bs58": "^6.0.0",
     "dotenv": "^16.4.7",

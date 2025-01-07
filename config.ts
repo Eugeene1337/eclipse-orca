@@ -1,9 +1,11 @@
 export const CONFIG = {
     rpc: 'https://eclipse.helius-rpc.com',
-    sleepFrom: 200,
-    sleepTo: 300,
-    maxAddressTxCount: 100,
+    sleepFrom: 10, // сек
+    sleepTo: 30,
+    minTxCount: 2,
+    maxTxCount: 10,
     shuffleWallets: false,
+    slippage: 1,
 }
 
 export const POOLS : PoolConfig = {

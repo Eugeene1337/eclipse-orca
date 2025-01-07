@@ -13,6 +13,7 @@ import {
 } from '@solana/web3.js';
 import { getSetComputeUnitLimitInstruction, getSetComputeUnitPriceInstruction } from '@solana-program/compute-budget';
 import { setDefaultFunder, swapInstructions } from '@orca-so/whirlpools';
+import { CONFIG } from '../config'
 
 
 export async function executeSwap(
@@ -20,16 +21,17 @@ export async function executeSwap(
     pool: Address,
     mintAddress: Address,
     inputAmount: bigint,
-    rpc: any
+    rpc: any,
+    logger: any,
 ): Promise<void> {
     try {
         await setDefaultFunder(wallet);
         const { instructions, quote } = await prepareSwapInstructions(rpc, wallet, pool, mintAddress, inputAmount);
         const transactionMessage = await prepareTransactionMessage(rpc, wallet, instructions);
         const signedTransaction = await signTransactionMessageWithSigners(transactionMessage);
-        await sendTransactionWithRetry(rpc, signedTransaction);
+        await sendTransactionWithRetry(rpc, signedTransaction, logger);
     } catch (error) {
-        console.error('Error executing swap:', error);
+        logger.error('Error executing swap:', error);
     }
 }
 
@@ -47,7 +49,7 @@ export async function prepareSwapInstructions(
         rpc,
         { inputAmount, mint },
         whirlpoolAddress,
-        100, // Slippage 100 = 1%
+        CONFIG.slippage * 100, // Slippage 100 = 1%
         wallet
     );
 
@@ -95,7 +97,8 @@ export async function prepareTransactionMessage(
 export async function sendTransactionWithRetry(
     rpc: any,
     transaction: any,
-    timeoutMs = 100000
+    logger: any,
+    timeoutMs = 100000,
 ): Promise<void> {
     const base64EncodedWireTransaction = getBase64EncodedWireTransaction(transaction);
     const startTime = Date.now();
@@ -112,10 +115,10 @@ export async function sendTransactionWithRetry(
         const statuses = await rpc.getSignatureStatuses([signature]).send();
         if (statuses.value[0]) {
             if (!statuses.value[0].err) {
-                console.log(`Transaction confirmed: ${signature}`);
+                logger.info(`Transaction confirmed: ${signature}`);
                 return;
             } else {
-                console.error(`Transaction failed: ${statuses.value[0].err.toString()}`);
+                logger.error(`Transaction failed: ${statuses.value[0].err.toString()}`);
                 return;
             }
         }
@@ -127,5 +130,5 @@ export async function sendTransactionWithRetry(
         }
     }
 
-    console.error('Transaction timeout reached.');
+    logger.error('Transaction timeout reached.');
 }
